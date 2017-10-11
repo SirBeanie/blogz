@@ -1,0 +1,24 @@
+<html>
+<head>
+	<title>{{title}}</title>
+	
+</head>
+	<body>
+		<div class="left">
+			<a class="nav" href="/blog">Main Page</a>
+			<a class="nav" href="/newpost">New Post</a>
+		</div>
+
+		<div class="right">
+			{% with messages = get_flashed_messages() %}
+				{% for message in messages %}
+				<p class="message">{{message}}</p>
+				{% endfor %}
+			{% endwith %}
+			
+			{% block content %}
+			{% endblock %}
+		</div>
+
+	</body>
+</html>
