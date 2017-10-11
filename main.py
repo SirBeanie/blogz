@@ -21,7 +21,7 @@ class Blog(db.Model):
 
 @app.route("/")
 def start():
-	return redirect("/blog")
+	return render_template("nav.html")
 		
 @app.route("/blog")
 def blog():
