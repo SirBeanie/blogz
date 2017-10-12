@@ -4,7 +4,7 @@ from sort import sort
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://build-a-blog:beproductive@localhost:8889/build-a-blog'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://blogz:beproductive@localhost:8889/blogz'
 app.config['SQLALCHEMY_ECHO'] = True
 app.secret_key = "this is a key"
 
@@ -14,14 +14,27 @@ class Blog(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	title = db.Column(db.String(50))
 	body = db.Column(db.Text)
+	user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 	
-	def __init__(self, title, body):
+	def __init__(self, title, body, user):
 		self.title = title
 		self.body = body
+		self.user = user
+		
+class User(db.Model):
+	id = db.Column(db.Integer, primary_key=True)
+	username = db.Column(db.String(24), unique=True)
+	password = db.Column(db.String(24))
+	blogs = db.relationship('Blog', backref='user')
+	
+	def __init__(self,username,password):
+		self.username = username
+		self.password = password
+
 
 @app.route("/")
 def start():
-	return render_template("nav.html")
+	return render_template("index.html")
 		
 @app.route("/blog")
 def blog():
@@ -60,6 +73,14 @@ def newpost():
 		return redirect("/blog?id=" + id)
 	
 	return render_template("newpost.html")
-		
+
+@app.route("/logout", methods=['POST'])
+def logout()
+
+
+
+	return redirect("/blog")
+
+
 if __name__ == "__main__":
     app.run()
