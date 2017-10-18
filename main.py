@@ -1,4 +1,4 @@
-from flask import Flask, request, redirect, render_template, session, flash
+from flask import Flask, request, redirect, render_template, session, flash 
 from flask_sqlalchemy import SQLAlchemy
 from sort import sort
 
@@ -31,11 +31,12 @@ class User(db.Model):
 		self.username = username
 		self.password = password
 
+@app.before_request
+def require_login():
+	whitelist = ['login','blog','signup','index', 'static']
+	if request.endpoint not in whitelist and 'user' not in session:
+		return redirect("/login")
 
-@app.route("/")
-def start():
-	return render_template("index.html")
-		
 @app.route("/blog")
 def blog():
 	if request.args.get('id'):
@@ -43,6 +44,15 @@ def blog():
 		blog = Blog.query.filter_by(id=blog_id).first()
 		
 		return render_template("new-blog.html", blog = blog)
+
+
+	elif request.args.get('user'):
+		user_id = request.args.get('user')
+		posts = Blog.query.filter_by(user_id=user_id).all()
+		
+		sort(post)
+		return render_template("blog.html", posts-posts, title="Posts by " + posts[0].user.username)
+
 	
 	else:
 		posts = Blog.query.all()
@@ -74,12 +84,91 @@ def newpost():
 	
 	return render_template("newpost.html")
 
+@app.route("/signup", methods=['GET','POST'])
+def signup():
+	if request.method == 'POST':
+		errors = 0 
+		if not request.form['username']:
+			flash("Please enter a username.")
+			errors += 1
+		if not request.form['password']:
+			flash("Please enter a password.")
+			errors += 1
+		if not request.form['verify']:
+			flash("Please verify password.")
+			errors += 1
+		if request.form['password'] != request.form['verify']:
+			flash("Passwords do not match.")
+			errors += 1
+		if request.form['username'] and User.query.filter_by(username=request.form['username']).first():
+			flash("Username already exists.")
+			errors += 1
+			
+		if errors > 0:
+			return render_template("signup.html", title="Sign Up")		
+		else:					
+			username = request.form['username']
+			password = request.form['password']
+			verify = request.form['verify']
+			
+			user = User(username, password)
+			db.session.add(user)
+			db.session.commit()
+			
+			session['user'] = username
+			flash("Logged in as " + username)
+			return redirect("/newpost")		
+	
+	return render_template("signup.html", title="Sign Up")
+
+
+@app.route("/login", methods=['GET','POST'])
+def login():
+	if request.method == 'POST':
+		errors = 0 # set error count to zero for each new POST request
+		if not request.form['username']:
+			flash("Please enter a username.")
+			errors += 1
+		if not request.form['password']:
+			flash("Please enter a password.")
+			errors += 1
+		if request.form['username'] and not User.query.filter_by(username=request.form['username']).first():
+			flash("Invalid username.")
+			errors += 1
+
+		if errors > 0:
+			return render_template("login.html", title="Log In")		
+		else:
+			username = request.form['username']
+			password = request.form['password']
+			
+			user = User.query.filter_by(username=username).first()
+			if password != user.password:
+				flash("Incorrect password.")
+				return render_template("login.html", title="Log In")
+			
+			session['user'] = username
+			flash("Logged in as " + username)
+			return redirect("/newpost")	
+	
+	return render_template("login.html", title="Log In")
+
+
+
 @app.route("/logout", methods=['POST'])
 def logout():
-
+	flash("Logged out " + session['user'])
+	del session['user']
+	return redirect("/blog")
 
 
 	return redirect("/blog")
+
+@app.route("/")
+def index():
+	users = User.query.all()
+	return render_template("user_index.html", users=users, title="Authors")
+
 
 
 if __name__ == "__main__":
