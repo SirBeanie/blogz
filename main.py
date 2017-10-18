@@ -10,6 +10,7 @@ app.secret_key = "this is a key"
 
 db = SQLAlchemy(app)
 
+
 class Blog(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	title = db.Column(db.String(50))
@@ -31,11 +32,13 @@ class User(db.Model):
 		self.username = username
 		self.password = password
 
+
 @app.before_request
 def require_login():
 	whitelist = ['login','blog','signup','index', 'static']
 	if request.endpoint not in whitelist and 'user' not in session:
 		return redirect("/login")
+
 
 @app.route("/blog")
 def blog():
@@ -50,16 +53,17 @@ def blog():
 		user_id = request.args.get('user')
 		posts = Blog.query.filter_by(user_id=user_id).all()
 		
-		sort(post)
-		return render_template("blog.html", posts-posts, title="Posts by " + posts[0].user.username)
+		sort(posts)
+		return render_template("blog.html", posts=posts, title="Posts by " + posts[0].user.username)
 
 	
 	else:
 		posts = Blog.query.all()
 		sort(posts)
 		
-		return render_template("blog.html", posts=posts)
-	
+		return render_template("blog.html", posts=posts, title="All Post")
+
+
 @app.route("/newpost", methods=['POST', 'GET'])
 def newpost():
 	if request.method == 'POST':
@@ -68,11 +72,13 @@ def newpost():
 				flash("Please create a title.")
 			if not request.form['body']:
 				flash("This area can not be blank.")
-			return render_template("newpost.html")
+			return render_template("newpost.html", title="New Post")
 		
 		blog_title = request.form['title']
 		blog_body = request.form['body']
-		post = Blog(blog_title, blog_body)
+		user = User.query.filter_by(username=session['user']).first()
+
+		post = Blog(blog_title, blog_body, user)
 		db.session.add(post)
 		db.session.commit()
 		
@@ -82,7 +88,8 @@ def newpost():
 		
 		return redirect("/blog?id=" + id)
 	
-	return render_template("newpost.html")
+	return render_template("newpost.html", title="New Post")
+
 
 @app.route("/signup", methods=['GET','POST'])
 def signup():
@@ -155,13 +162,10 @@ def login():
 
 
 
-@app.route("/logout", methods=['POST'])
+@app.route("/logout")
 def logout():
 	flash("Logged out " + session['user'])
 	del session['user']
-	return redirect("/blog")
-
-
 	return redirect("/blog")
 
 @app.route("/")
