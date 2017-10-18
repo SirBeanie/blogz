@@ -75,7 +75,7 @@ def newpost():
 	return render_template("newpost.html")
 
 @app.route("/logout", methods=['POST'])
-def logout()
+def logout():
 
 
 
