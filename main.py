@@ -132,7 +132,7 @@ def signup():
 @app.route("/login", methods=['GET','POST'])
 def login():
 	if request.method == 'POST':
-		errors = 0 # set error count to zero for each new POST request
+		errors = 0 
 		if not request.form['username']:
 			flash("Please enter a username.")
 			errors += 1
